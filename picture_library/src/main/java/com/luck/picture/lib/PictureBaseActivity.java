@@ -26,6 +26,7 @@ import com.luck.picture.lib.entity.LocalMediaFolder;
 import com.luck.picture.lib.immersive.ImmersiveManage;
 import com.luck.picture.lib.rxbus2.RxBus;
 import com.luck.picture.lib.rxbus2.RxUtils;
+import com.luck.picture.lib.tools.AndroidQTransformUtils;
 import com.luck.picture.lib.tools.AttrsUtils;
 import com.luck.picture.lib.tools.DateUtils;
 import com.luck.picture.lib.tools.DoubleUtils;
@@ -33,7 +34,6 @@ import com.luck.picture.lib.tools.PictureFileUtils;
 import com.luck.picture.lib.tools.SdkVersionUtils;
 import com.yalantis.ucrop.UCrop;
 import com.yalantis.ucrop.UCropMulti;
-import com.yalantis.ucrop.util.BitmapUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,8 +41,6 @@ import java.util.List;
 
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -296,11 +294,14 @@ public class PictureBaseActivity extends FragmentActivity {
         options.setHideBottomControls(config.hideBottomControls);
         options.setFreeStyleCropEnabled(config.freeStyleCropEnabled);
         boolean isHttp = PictureMimeType.isHttp(originalPath);
-        String imgType = PictureMimeType.getLastImgType(originalPath);
         boolean isAndroidQ = SdkVersionUtils.checkedAndroid_Q();
+        String imgType = isAndroidQ ? PictureMimeType
+                .getLastImgSuffix(PictureFileUtils.getImageMimeType(Uri.parse(originalPath), mContext))
+                : PictureMimeType.getLastImgType(originalPath);
         Uri uri = isHttp || isAndroidQ ? Uri.parse(originalPath) : Uri.fromFile(new File(originalPath));
-        UCrop.of(uri, Uri.fromFile(new File(PictureFileUtils.getDiskCacheDir(this),
-                System.currentTimeMillis() + imgType)))
+        File file = new File(PictureFileUtils.getDiskCacheDir(this),
+                System.currentTimeMillis() + imgType);
+        UCrop.of(uri, Uri.fromFile(file))
                 .withAspectRatio(config.aspect_ratio_x, config.aspect_ratio_y)
                 .withMaxResultSize(config.cropWidth, config.cropHeight)
                 .withOptions(options)
@@ -331,12 +332,15 @@ public class PictureBaseActivity extends FragmentActivity {
         options.setCutListData(list);
         options.setFreeStyleCropEnabled(config.freeStyleCropEnabled);
         String path = list.size() > 0 ? list.get(0) : "";
-        boolean isHttp = PictureMimeType.isHttp(path);
-        String imgType = PictureMimeType.getLastImgType(path);
         boolean isAndroidQ = SdkVersionUtils.checkedAndroid_Q();
+        boolean isHttp = PictureMimeType.isHttp(path);
+        String imgType = isAndroidQ ? PictureMimeType
+                .getLastImgSuffix(PictureFileUtils.getImageMimeType(Uri.parse(path), mContext))
+                : PictureMimeType.getLastImgType(path);
         Uri uri = isHttp || isAndroidQ ? Uri.parse(path) : Uri.fromFile(new File(path));
-        UCropMulti.of(uri, Uri.fromFile(new File(PictureFileUtils.getDiskCacheDir(this),
-                System.currentTimeMillis() + imgType)))
+        File file = new File(PictureFileUtils.getDiskCacheDir(this),
+                System.currentTimeMillis() + imgType);
+        UCropMulti.of(uri, Uri.fromFile(file))
                 .withAspectRatio(config.aspect_ratio_x, config.aspect_ratio_y)
                 .withMaxResultSize(config.cropWidth, config.cropHeight)
                 .withOptions(options)
@@ -390,7 +394,7 @@ public class PictureBaseActivity extends FragmentActivity {
         if (folders.size() == 0) {
             // 没有相册 先创建一个最近相册出来
             LocalMediaFolder newFolder = new LocalMediaFolder();
-            String folderName = config.mimeType == PictureMimeType.ofAudio() ?
+            String folderName = config.chooseMode == PictureMimeType.ofAudio() ?
                     getString(R.string.picture_all_audio) : getString(R.string.picture_camera_roll);
             newFolder.setName(folderName);
             newFolder.setPath("");
@@ -431,7 +435,7 @@ public class PictureBaseActivity extends FragmentActivity {
     protected void onResult(List<LocalMedia> images) {
         boolean androidQ = SdkVersionUtils.checkedAndroid_Q();
         boolean isVideo = PictureMimeType.isVideo(images != null && images.size() > 0
-                ? images.get(0).getPictureType() : "");
+                ? images.get(0).getMimeType() : "");
         if (androidQ && !isVideo) {
             showCompressDialog();
         }
@@ -439,7 +443,7 @@ public class PictureBaseActivity extends FragmentActivity {
             @NonNull
             @Override
             public List<LocalMedia> doSth(Object... objects) {
-                if (androidQ && !isVideo) {
+                if (androidQ) {
                     // Android Q 版本做拷贝应用内沙盒适配
                     int size = images.size();
                     for (int i = 0; i < size; i++) {
@@ -448,17 +452,22 @@ public class PictureBaseActivity extends FragmentActivity {
                             continue;
                         }
                         if (media.isCompressed()) {
-                            media.setPath(media.getCompressPath());
+
                         } else if (media.isCut()) {
-                            media.setPath(media.getCutPath());
+
                         } else {
-                            String cachedDir = PictureFileUtils.getDiskCacheDir(getApplicationContext());
-                            String imgType = PictureMimeType.getLastImgType(media.getPath());
-                            String newPath = cachedDir + File.separator + System.currentTimeMillis() + imgType;
-                            Bitmap bitmapFromUri = BitmapUtils.getBitmapFromUri(getApplicationContext(),
-                                    Uri.parse(media.getPath()));
-                            BitmapUtils.saveBitmap(bitmapFromUri, newPath);
-                            media.setPath(newPath);
+                            String path;
+                            if (isVideo) {
+                                path = AndroidQTransformUtils.parseVideoPathToAndroidQ
+                                        (getApplicationContext(), media.getPath(), media.getMimeType());
+                            } else if (config.chooseMode == PictureMimeType.ofAudio()) {
+                                path = AndroidQTransformUtils.parseAudioPathToAndroidQ
+                                        (getApplicationContext(), media.getPath(), media.getMimeType());
+                            } else {
+                                path = AndroidQTransformUtils.parseImagePathToAndroidQ
+                                        (getApplicationContext(), media.getPath(), media.getMimeType());
+                            }
+                            media.setAndroidQToPath(path);
                         }
 
                     }
@@ -570,7 +579,7 @@ public class PictureBaseActivity extends FragmentActivity {
      */
     protected String getAudioPath(Intent data) {
         boolean compare_SDK_19 = Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT;
-        if (data != null && config.mimeType == PictureMimeType.ofAudio()) {
+        if (data != null && config.chooseMode == PictureMimeType.ofAudio()) {
             try {
                 Uri uri = data.getData();
                 final String audioPath;

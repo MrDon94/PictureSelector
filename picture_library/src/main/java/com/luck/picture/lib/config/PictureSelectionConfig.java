@@ -20,7 +20,7 @@ import java.util.List;
  */
 
 public final class PictureSelectionConfig implements Parcelable {
-    public int mimeType;
+    public int chooseMode;
     public boolean camera;
     public String outputCameraPath;
     public String compressSavePath;
@@ -68,7 +68,7 @@ public final class PictureSelectionConfig implements Parcelable {
     public List<LocalMedia> selectionMedias;
 
     private void reset() {
-        mimeType = PictureConfig.TYPE_IMAGE;
+        chooseMode = PictureMimeType.ofImage();
         camera = false;
         themeStyleId = R.style.picture_default_style;
         selectionMode = PictureConfig.MULTIPLE;
@@ -135,7 +135,7 @@ public final class PictureSelectionConfig implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(this.mimeType);
+        dest.writeInt(this.chooseMode);
         dest.writeByte(this.camera ? (byte) 1 : (byte) 0);
         dest.writeString(this.outputCameraPath);
         dest.writeString(this.compressSavePath);
@@ -185,7 +185,7 @@ public final class PictureSelectionConfig implements Parcelable {
     }
 
     protected PictureSelectionConfig(Parcel in) {
-        this.mimeType = in.readInt();
+        this.chooseMode = in.readInt();
         this.camera = in.readByte() != 0;
         this.outputCameraPath = in.readString();
         this.compressSavePath = in.readString();

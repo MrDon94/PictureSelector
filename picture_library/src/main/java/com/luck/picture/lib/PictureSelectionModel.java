@@ -7,12 +7,10 @@ import android.support.annotation.IntRange;
 import android.support.annotation.StyleRes;
 import android.support.v4.app.Fragment;
 
-import com.luck.picture.lib.config.PictureConfig;
 import com.luck.picture.lib.config.PictureSelectionConfig;
 import com.luck.picture.lib.entity.LocalMedia;
 import com.luck.picture.lib.tools.DoubleUtils;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,17 +27,17 @@ public class PictureSelectionModel {
     private PictureSelectionConfig selectionConfig;
     private PictureSelector selector;
 
-    public PictureSelectionModel(PictureSelector selector, int mimeType) {
+    public PictureSelectionModel(PictureSelector selector, int chooseMode) {
         this.selector = selector;
         selectionConfig = PictureSelectionConfig.getCleanInstance();
-        selectionConfig.mimeType = mimeType;
+        selectionConfig.chooseMode = chooseMode;
     }
 
-    public PictureSelectionModel(PictureSelector selector, int mimeType, boolean camera) {
+    public PictureSelectionModel(PictureSelector selector, int chooseMode, boolean camera) {
         this.selector = selector;
         selectionConfig = PictureSelectionConfig.getCleanInstance();
         selectionConfig.camera = camera;
-        selectionConfig.mimeType = mimeType;
+        selectionConfig.chooseMode = chooseMode;
     }
 
     /**

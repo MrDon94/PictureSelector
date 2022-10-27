@@ -3,7 +3,6 @@ package com.luck.pictureselector;
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.IdRes;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -24,8 +23,6 @@ import com.luck.picture.lib.entity.LocalMedia;
 import com.luck.picture.lib.permissions.RxPermissions;
 import com.luck.picture.lib.tools.PictureFileUtils;
 import com.luck.pictureselector.adapter.GridImageAdapter;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,32 +52,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         themeId = R.style.picture_default_style;
-        minus = (ImageView) findViewById(R.id.minus);
-        plus = (ImageView) findViewById(R.id.plus);
-        tv_select_num = (TextView) findViewById(R.id.tv_select_num);
-        rgb_crop = (RadioGroup) findViewById(R.id.rgb_crop);
-        rgb_style = (RadioGroup) findViewById(R.id.rgb_style);
-        rgb_photo_mode = (RadioGroup) findViewById(R.id.rgb_photo_mode);
-        cb_voice = (CheckBox) findViewById(R.id.cb_voice);
-        cb_choose_mode = (CheckBox) findViewById(R.id.cb_choose_mode);
-        cb_isCamera = (CheckBox) findViewById(R.id.cb_isCamera);
-        cb_isGif = (CheckBox) findViewById(R.id.cb_isGif);
-        cb_preview_img = (CheckBox) findViewById(R.id.cb_preview_img);
-        cb_preview_video = (CheckBox) findViewById(R.id.cb_preview_video);
-        cb_crop = (CheckBox) findViewById(R.id.cb_crop);
-        cb_styleCrop = (CheckBox) findViewById(R.id.cb_styleCrop);
-        cb_compress = (CheckBox) findViewById(R.id.cb_compress);
-        cb_mode = (CheckBox) findViewById(R.id.cb_mode);
-        cb_showCropGrid = (CheckBox) findViewById(R.id.cb_showCropGrid);
-        cb_showCropFrame = (CheckBox) findViewById(R.id.cb_showCropFrame);
-        cb_preview_audio = (CheckBox) findViewById(R.id.cb_preview_audio);
-        cb_hide = (CheckBox) findViewById(R.id.cb_hide);
-        cb_crop_circular = (CheckBox) findViewById(R.id.cb_crop_circular);
+        minus = findViewById(R.id.minus);
+        plus = findViewById(R.id.plus);
+        tv_select_num = findViewById(R.id.tv_select_num);
+        rgb_crop = findViewById(R.id.rgb_crop);
+        rgb_style = findViewById(R.id.rgb_style);
+        rgb_photo_mode = findViewById(R.id.rgb_photo_mode);
+        cb_voice = findViewById(R.id.cb_voice);
+        cb_choose_mode = findViewById(R.id.cb_choose_mode);
+        cb_isCamera = findViewById(R.id.cb_isCamera);
+        cb_isGif = findViewById(R.id.cb_isGif);
+        cb_preview_img = findViewById(R.id.cb_preview_img);
+        cb_preview_video = findViewById(R.id.cb_preview_video);
+        cb_crop = findViewById(R.id.cb_crop);
+        cb_styleCrop = findViewById(R.id.cb_styleCrop);
+        cb_compress = findViewById(R.id.cb_compress);
+        cb_mode = findViewById(R.id.cb_mode);
+        cb_showCropGrid = findViewById(R.id.cb_showCropGrid);
+        cb_showCropFrame = findViewById(R.id.cb_showCropFrame);
+        cb_preview_audio = findViewById(R.id.cb_preview_audio);
+        cb_hide = findViewById(R.id.cb_hide);
+        cb_crop_circular = findViewById(R.id.cb_crop_circular);
         rgb_crop.setOnCheckedChangeListener(this);
         rgb_style.setOnCheckedChangeListener(this);
         rgb_photo_mode.setOnCheckedChangeListener(this);
-        recyclerView = (RecyclerView) findViewById(R.id.recycler);
-        left_back = (ImageView) findViewById(R.id.left_back);
+        recyclerView = findViewById(R.id.recycler);
+        left_back = findViewById(R.id.left_back);
         left_back.setOnClickListener(this);
         minus.setOnClickListener(this);
         plus.setOnClickListener(this);
@@ -93,28 +90,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         adapter.setList(selectList);
         adapter.setSelectMax(maxSelectNum);
         recyclerView.setAdapter(adapter);
-        adapter.setOnItemClickListener(new GridImageAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(int position, View v) {
-                if (selectList.size() > 0) {
-                    LocalMedia media = selectList.get(position);
-                    String pictureType = media.getPictureType();
-                    int mediaType = PictureMimeType.pictureToVideo(pictureType);
-                    switch (mediaType) {
-                        case 1:
-                            // 预览图片 可自定长按保存路径
-                            //PictureSelector.create(MainActivity.this).themeStyle(themeId).externalPicturePreview(position, "/custom_file", selectList);
-                            PictureSelector.create(MainActivity.this).themeStyle(themeId).openExternalPreview(position, selectList);
-                            break;
-                        case 2:
-                            // 预览视频
-                            PictureSelector.create(MainActivity.this).externalPictureVideo(media.getPath());
-                            break;
-                        case 3:
-                            // 预览音频
-                            PictureSelector.create(MainActivity.this).externalPictureAudio(media.getPath());
-                            break;
-                    }
+        adapter.setOnItemClickListener((position, v) -> {
+            if (selectList.size() > 0) {
+                LocalMedia media = selectList.get(position);
+                String mimeType = media.getMimeType();
+                int mediaType = PictureMimeType.pictureToVideo(mimeType);
+                switch (mediaType) {
+                    case 1:
+                        // 预览图片 可自定长按保存路径
+                        //PictureSelector.create(MainActivity.this).themeStyle(themeId).externalPicturePreview(position, "/custom_file", selectList);
+                        PictureSelector.create(MainActivity.this).themeStyle(themeId).openExternalPreview(position, selectList);
+                        break;
+                    case 2:
+                        // 预览视频
+                        PictureSelector.create(MainActivity.this).externalPictureVideo(media.getPath());
+                        break;
+                    case 3:
+                        // 预览音频
+                        PictureSelector.create(MainActivity.this).externalPictureAudio(media.getPath());
+                        break;
                 }
             }
         });
@@ -249,10 +243,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // 2.media.getCutPath();为裁剪后path，需判断media.isCut();是否为true
                     // 3.media.getCompressPath();为压缩后path，需判断media.isCompressed();是否为true
                     // 如果裁剪并压缩了，已取压缩路径为准，因为是先裁剪后压缩的
+                    // 4.media.getAndroidQToPath();为Android Q版本特有返回的字段，此字段有值就用来做上传使用
                     for (LocalMedia media : selectList) {
                         Log.i(TAG, "压缩---->" + media.getCompressPath());
                         Log.i(TAG, "原图---->" + media.getPath());
                         Log.i(TAG, "裁剪---->" + media.getCutPath());
+                        Log.i(TAG, "Android Q 特有Path---->" + media.getAndroidQToPath());
                     }
                     adapter.setList(selectList);
                     adapter.notifyDataSetChanged();
@@ -399,19 +395,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
         }
-    }
-
-    /**
-     * 自定义压缩存储地址
-     *
-     * @return
-     */
-    private String getPath() {
-        String path = Environment.getExternalStorageDirectory() + "/Luban/image/";
-        File file = new File(path);
-        if (file.mkdirs()) {
-            return path;
-        }
-        return path;
     }
 }
