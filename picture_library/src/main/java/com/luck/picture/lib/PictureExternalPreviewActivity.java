@@ -7,7 +7,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.Nullable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
@@ -19,15 +18,12 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Priority;
-import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
-import com.bumptech.glide.request.transition.Transition;
 import com.luck.picture.lib.config.PictureConfig;
 import com.luck.picture.lib.config.PictureMimeType;
 import com.luck.picture.lib.dialog.CustomDialog;
@@ -163,47 +159,40 @@ public class PictureExternalPreviewActivity extends PictureBaseActivity implemen
                 longImg.setVisibility(eqLongImg && !isGif ? View.VISIBLE : View.GONE);
                 // 压缩过的gif就不是gif了
                 if (isGif && !media.isCompressed()) {
-                    RequestOptions gifOptions = new RequestOptions()
+                    Glide.with(PictureExternalPreviewActivity.this)
+                            .load(path)
+                            .asGif()
                             .override(480, 800)
                             .priority(Priority.HIGH)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE);
-                    Glide.with(PictureExternalPreviewActivity.this)
-                            .asGif()
-                            .apply(gifOptions)
-                            .load(path)
-                            .listener(new RequestListener<GifDrawable>() {
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .listener(new RequestListener<String, GifDrawable>() {
                                 @Override
-                                public boolean onLoadFailed(@Nullable GlideException e, Object model
-                                        , Target<GifDrawable> target, boolean isFirstResource) {
+                                public boolean onException(Exception e, String model, Target<GifDrawable> target, boolean isFirstResource) {
                                     dismissDialog();
                                     return false;
                                 }
 
                                 @Override
-                                public boolean onResourceReady(GifDrawable resource, Object model
-                                        , Target<GifDrawable> target, DataSource dataSource,
-                                                               boolean isFirstResource) {
+                                public boolean onResourceReady(GifDrawable resource, String model, Target<GifDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
                                     dismissDialog();
                                     return false;
                                 }
                             })
                             .into(imageView);
                 } else {
-                    RequestOptions options = new RequestOptions()
-                            .diskCacheStrategy(DiskCacheStrategy.ALL);
                     Glide.with(PictureExternalPreviewActivity.this)
-                            .asBitmap()
                             .load(path)
-                            .apply(options)
-                            .into(new SimpleTarget<Bitmap>(480, 800) {
+                            .asBitmap()
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .into(new SimpleTarget<Bitmap>() {
                                 @Override
-                                public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                                    super.onLoadFailed(errorDrawable);
+                                public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                                    super.onLoadFailed(e, errorDrawable);
                                     dismissDialog();
                                 }
 
                                 @Override
-                                public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+                                public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                                     dismissDialog();
                                     if (eqLongImg) {
                                         displayLongPic(resource, longImg);
