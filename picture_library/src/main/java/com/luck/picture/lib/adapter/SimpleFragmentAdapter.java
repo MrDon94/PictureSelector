@@ -117,7 +117,7 @@ public class SimpleFragmentAdapter extends PagerAdapter {
                         .load(path)
                         .asBitmap()
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .into(new SimpleTarget<Bitmap>() {
+                        .into(new SimpleTarget<Bitmap>(480,800) {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
                                 if (eqLongImg) {
